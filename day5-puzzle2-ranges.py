@@ -1,7 +1,10 @@
 import os
 import re
+import logging
 
-input = open("/Users/npjester/Documents/GitHub/2023-advent-of-code/Resources/day5/example.txt")
+logging.basicConfig(format='%(levelname)s:%(message)s',level=logging.DEBUG)
+
+input = open("/Users/npjester/Documents/GitHub/2023-advent-of-code/Resources/day5/input.txt")
 seedMatch = re.compile(r'seeds:\s+(?P<seeds>.*)$')
 seedMapMatch = re.compile(r'(\d+\s+\d+)')
 seedToSoilMapMatch = re.compile(r'seed-to-soil map:')
@@ -100,130 +103,6 @@ def getAlmanacFromInput():
                         almanac['humidityToLocationMap'][mapDataRecordNumber] = { 'destination' : int(mapData.group('destination')),'source' : int(mapData.group('source')), 'range' : int(mapData.group('range')) }
         lineNumber += 1
 
-def getSeedToSoil(seed):
-    return getDestinationFromSource(seed, "seedToSoilMap")
-    
-def getSoilToFertilizer(soil):
-    return getDestinationFromSource(soil, "soilToFertilizerMap")
-
-def getFertilizerToWater(fertilizer):
-    return getDestinationFromSource(fertilizer, "fertilizerToWaterMap")
-
-def getWaterToLight(water):
-    return getDestinationFromSource(water, "waterToLightMap")
-
-def getLightToTemperature(light):
-    return getDestinationFromSource(light, "lightToTemperatureMap")
-
-def getTemperatureToHumidity(temperature):
-    return getDestinationFromSource(temperature, "temperatureToHumidityMap")
-
-def getHumidityToLocation(humidity):
-    return getDestinationFromSource(humidity, "humidityToLocationMap")
-
-def getDestinationFromSource(source, type):
-    destination = source
-    for mapRecord in almanac[type]:
-        if almanac[type][mapRecord]['source'] <= source <= (almanac[type][mapRecord]['source'] + almanac[type][mapRecord]['range'] - 1 ):
-            destination = almanac[type][mapRecord]['destination'] + (source - almanac[type][mapRecord]['source'])
-            return destination
-    return destination
-
-def getSeedToSoilForListOfSeeds(seed):
-    return getDestinationFromSourceForListOfSeeds(seed, "seedToSoilMap")
-    
-def getSoilToFertilizerForListOfSeeds(soil):
-    return getDestinationFromSourceForListOfSeeds(soil, "soilToFertilizerMap")
-
-def getFertilizerToWaterForListOfSeeds(fertilizer):
-    return getDestinationFromSourceForListOfSeeds(fertilizer, "fertilizerToWaterMap")
-
-def getWaterToLightForListOfSeeds(water):
-    return getDestinationFromSourceForListOfSeeds(water, "waterToLightMap")
-
-def getLightToTemperatureForListOfSeeds(light):
-    return getDestinationFromSourceForListOfSeeds(light, "lightToTemperatureMap")
-
-def getTemperatureToHumidityForListOfSeeds(temperature):
-    return getDestinationFromSourceForListOfSeeds(temperature, "temperatureToHumidityMap")
-
-def getHumidityToLocationForListOfSeeds(humidity):
-    return getDestinationFromSourceForListOfSeeds(humidity, "humidityToLocationMap")
-
-def getDestinationFromSourceForListOfSeeds(sourceList, type):
-    destinationList = []
-    print(f'Checking {type}')
-    #print(f'SourceList Length: {len(sourceList)}')
-    for mapRecord in almanac[type]:
-        nonMatchedSources = []
-        mapRecordSourceList = []
-        matchedSources = []
-        sourceStart = almanac[type][mapRecord]['source']
-        sourceEnd = almanac[type][mapRecord]['source'] + almanac[type][mapRecord]['range']
-        mapRecordSourceList = [*range(sourceStart,sourceEnd)]
-        matchedSources = list(set(sourceList) & set(mapRecordSourceList))
-        nonMatchedSources = list(set(sourceList).difference(set(matchedSources)))
-        for source in matchedSources:
-            destinationList.append(almanac[type][mapRecord]['destination'] + (source - almanac[type][mapRecord]['source']))   
-    destinationList += nonMatchedSources
-    return destinationList
-
-def getLocationForSeed(seed):
-    soilDestination = getSeedToSoil(seed)
-    fertilizerDestination = getSoilToFertilizer(soilDestination)
-    waterDestination = getFertilizerToWater(fertilizerDestination)
-    lightDestination = getWaterToLight(waterDestination)
-    temperatureDestination = getLightToTemperature(lightDestination)
-    humidityDestination = getTemperatureToHumidity(temperatureDestination)
-    locationDestination = getHumidityToLocation(humidityDestination)
-    return locationDestination
-
-def getLocationForSeeds(seeds):
-    soilDestination = getSeedToSoilForListOfSeeds(seeds)
-    fertilizerDestination = getSoilToFertilizerForListOfSeeds(soilDestination)
-    waterDestination = getFertilizerToWaterForListOfSeeds(fertilizerDestination)
-    lightDestination = getWaterToLightForListOfSeeds(waterDestination)
-    temperatureDestination = getLightToTemperatureForListOfSeeds(lightDestination)
-    humidityDestination = getTemperatureToHumidityForListOfSeeds(temperatureDestination)
-    locationDestination = getHumidityToLocationForListOfSeeds(humidityDestination)
-    print(min(locationDestination))
-    return min(locationDestination)
-
-def getLocationForSeedsFromSeedMap(seedMap):
-    startSeed = almanac['seedMaps'][seedMap]['seedStart']
-    maxSeed = almanac['seedMaps'][seedMap]['seedStart'] + almanac['seedMaps'][seedMap]['range']
-    print(f'Seed Map Range: {[*range(startSeed,maxSeed)]}')
-    minFromSeedMap = getLocationForSeeds([*range(startSeed,maxSeed)])
-    return minFromSeedMap
-
-def getSeedsFromSeedMap(): ## Don't think we need this
-    almanac['seedList'] = []
-    for seedMap in almanac['seedMaps']:
-        startSeed = almanac['seedMaps'][seedMap]['seedStart']
-        maxSeed = almanac['seedMaps'][seedMap]['seedStart'] + almanac['seedMaps'][seedMap]['range'] + 1
-        almanac['seedList'].extend(range(startSeed,maxSeed))
-
-def getLowestLocationNumberFromSeeds():
-    seedLocations = []
-    almanac['seedLocationData'] = {}
-    getSeedsFromSeedMap()
-    for seed in almanac['seedList']:
-        #print(seed)
-        almanac['seedLocationData'][seed] = getLocationForSeed(seed)
-        seedLocations.append(almanac['seedLocationData'][seed])
-    #print(seedLocations)
-    return min(seedLocations)
-
-def getLowestLocationNumberFromSeedMap():
-    seedLocations = []
-    #almanac['seedLocationData'] = {}
-    ##---
-    for seedMap in almanac['seedMaps']:
-        print(f'Processing: {seedMap}')
-        seedLocations.append(getLocationForSeedsFromSeedMap(seedMap))
-    print(seedLocations)
-    return min(seedLocations)
-
 ############# Ranges Below Here ################
 def getSeedToSoilForRangeOfSeeds(seed):
     return getDestinationFromSourceForRangeOfSeeds(seed, "seedToSoilMap")
@@ -248,43 +127,52 @@ def getHumidityToLocationForRangeOfSeeds(humidity):
 
 def getDestinationFromSourceForRangeOfSeeds(sourceRanges, mapType):
     destinationRanges = {}
-    print(f'Source Range {sourceRanges}')
+    logging.debug(f'Source Range {sourceRanges} checking {mapType}')
     for sourceMap in almanac[mapType]:
-        print(sourceMap)
+        #logging.debug(sourceMap)
         sourceMapStart = almanac[mapType][sourceMap]['source']
         sourceMapEnd = almanac[mapType][sourceMap]['source'] + almanac[mapType][sourceMap]['range'] - 1
         destinationMapStart = almanac[mapType][sourceMap]['destination']
         destinationMapEnd = almanac[mapType][sourceMap]['destination'] + almanac[mapType][sourceMap]['range'] - 1
-        print(f'sourceStart: {sourceMapStart} sourceEnd: {sourceMapEnd} destMapStart: {destinationMapStart} destMapEnd: {destinationMapEnd}')
+        logging.debug(f'sourceMapStart: {sourceMapStart} sourceMapEnd: {sourceMapEnd} destMapStart: {destinationMapStart} destMapEnd: {destinationMapEnd}')
+        completeMatch = []
         for sourceRange in sourceRanges:
             ## Starts and Ends within source range
+            logging.debug(f"Checking {sourceRanges[sourceRange]['start']} to {sourceRanges[sourceRange]['end']}")
             if sourceMapStart <= sourceRanges[sourceRange]['start'] <= sourceMapEnd and sourceMapStart <= sourceRanges[sourceRange]['end'] <= sourceMapEnd:
-                print('Within Source Map Range')
                 mappedStart = destinationMapStart + (sourceRanges[sourceRange]['start'] - sourceMapStart)
-                mappedEnd = destinationMapStart + (sourceRanges[sourceRange]['end'] - sourceMapStart)
+                mappedEnd = mappedStart + (sourceRanges[sourceRange]['end'] - sourceRanges[sourceRange]['start'])
                 destinationRanges[mappedStart] = {'start':mappedStart,'end':mappedEnd}
+                logging.debug(f"Within Source Map Range: {sourceMapStart}-{sourceMapEnd}: {sourceRanges[sourceRange]['start']}-{sourceRanges[sourceRange]['end']} maps to {mappedStart}-{mappedEnd} : {destinationRanges[mappedStart]}")
+                completeMatch.append(sourceRange)
             ## Ends within source range
             elif sourceMapStart <= sourceRanges[sourceRange]['end'] <= sourceMapEnd:
-                print('Ends in Source Map Range')
+                offset = sourceRanges[sourceRange]['end'] - sourceMapStart
                 mappedStart = destinationMapStart
-                mappedEnd = destinationMapStart + (sourceRanges[sourceRange]['end'] - sourceMapStart)
+                mappedEnd = mappedStart + (offset)
                 newEnd = sourceMapStart - 1
+                oldEnd = sourceRanges[sourceRange]['end']
                 sourceRanges[sourceRange]['end'] = newEnd
                 destinationRanges[mappedStart] = {'start':mappedStart,'end':mappedEnd}
+                logging.debug(f"Ends in Source Map Range: {sourceMapStart}:{sourceMapEnd}: {sourceRanges[sourceRange]['start']}:{oldEnd} - {mappedStart}:{mappedEnd} : {oldEnd}->{newEnd} {destinationRanges[mappedStart]}")
             ## Starts within source range
             elif sourceMapStart <= sourceRanges[sourceRange]['start'] <= sourceMapEnd:
-                print('Starts in Source Map Range')
-                mappedStart = destinationMapStart + (sourceRanges[sourceRange]['start'] - sourceMapStart)
-                mappedEnd = destinationMapStart
                 newStart = sourceMapEnd + 1
+                oldStart = sourceRanges[sourceRange]['start']
+                offset = sourceRanges[sourceRange]['start'] - sourceMapStart
+                mappedStart = destinationMapStart + (offset)
+                mappedEnd = destinationMapEnd
                 sourceRanges[sourceRange]['start'] = newStart
                 destinationRanges[mappedStart] = {'start':mappedStart,'end':mappedEnd}
-                
+                logging.debug(f"Starts in Source Map Range: {sourceMapStart}:{sourceMapEnd}: {oldStart}:{sourceRanges[sourceRange]['end']} - {mappedStart}:{mappedEnd} : {oldStart}->{newStart} {destinationRanges[mappedStart]}")
             else:
-                print('Not In Range')
+                logging.debug(f'Not In Range {sourceMapStart} - {sourceMapEnd}')
+        logging.debug(f'Complete Matches: {completeMatch}')
+        for source in completeMatch:
+            sourceRanges.pop(source)
     for sourceRange in sourceRanges:        
         destinationRanges[sourceRanges[sourceRange]['start']] = {'start':sourceRanges[sourceRange]['start'],'end':sourceRanges[sourceRange]['end']}
-    print(f'Destination Range: {destinationRanges}')
+    logging.debug(f'{mapType} Destination Range: {destinationRanges}')
     return destinationRanges
 
 def getLowestValueFromRanges(ranges):
@@ -294,10 +182,10 @@ def getLocationForSeedRanges(seedRanges):
     soilDestinationRanges = getSeedToSoilForRangeOfSeeds(seedRanges)
     fertilizerDestinationRanges = getSoilToFertilizerForRangeOfSeeds(soilDestinationRanges)
     waterDestinationRanges = getFertilizerToWaterForRangeOfSeeds(fertilizerDestinationRanges)
-    lightDestinationRanges = getSoilToFertilizerForRangeOfSeeds(waterDestinationRanges)
-    temperatureDestinationRanges = getSoilToFertilizerForRangeOfSeeds(lightDestinationRanges)
-    humidityDestinationRanges = getSoilToFertilizerForRangeOfSeeds(temperatureDestinationRanges)
-    locationDestinationRanges = getSoilToFertilizerForRangeOfSeeds(humidityDestinationRanges)
+    lightDestinationRanges = getWaterToLightForRangeOfSeeds(waterDestinationRanges)
+    temperatureDestinationRanges = getLightToTemperatureForRangeOfSeeds(lightDestinationRanges)
+    humidityDestinationRanges = getTemperatureToHumidityForRangeOfSeeds(temperatureDestinationRanges)
+    locationDestinationRanges = getHumidityToLocationForRangeOfSeeds(humidityDestinationRanges)
     lowestLocation = getLowestValueFromRanges(locationDestinationRanges)
     return lowestLocation
 
@@ -308,16 +196,13 @@ def getLowestLocationNumberUsingRanges():
         seedMapStart = almanac['seedMaps'][seedMap]['seedStart']
         seedMapEnd = almanac['seedMaps'][seedMap]['seedStart'] + almanac['seedMaps'][seedMap]['range'] - 1
         seedMapRanges[seedMapStart] = {"start":seedMapStart,"end":seedMapEnd}
-    #print(len(seedMapRanges))
     locations.append(getLocationForSeedRanges(seedMapRanges))
     return min(locations)
 
 def main():
     getAlmanacFromInput()
-    #lowestLocationNumber = getLowestLocationNumberFromSeedMap()
-    #print(lowestLocationNumber)
     lowestLocationNumberRanges = getLowestLocationNumberUsingRanges()
-    print(lowestLocationNumberRanges)
+    logging.info(lowestLocationNumberRanges)
 
 if __name__ == "__main__":
     main()
